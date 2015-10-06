@@ -174,11 +174,6 @@ def setup_hosts(net, switches, config):
         for link in host['links']:
             switch = switches[link['sw']]
             lnk = net.addLink(new_host, switch)
-            #,
-            #                  intfName1='%s-%s' % (host['name'],
-            #                                       link['sw']),
-            #                  intfName2='%s-%s' % (link['sw'],
-            #                                       host['name']))
 
             if link.has_key('ip'):
                ip, netmask = link['ip'].split('/')
