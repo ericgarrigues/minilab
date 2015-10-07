@@ -13,6 +13,8 @@ import shlex
 import argparse
 import yaml
 import os
+import time
+import glob
 
 from mininet.net import Mininet
 from mininet.node import Host, OVSSwitch, RemoteController
@@ -23,11 +25,10 @@ from jinja2 import FileSystemLoader, Environment
 
 from nat import *
 
-
 class ManageableHost(Host):
     def __init__(self, name, ip=None, inNamespace=True,
                  labdir='/var/minilab', root_fs=None,
-                 ssh_template=None, auth_keys=None):
+                 ssh_template=None, auth_keys=None, **kwargs):
 
         self.name = name
         self.root_fs = root_fs
@@ -38,13 +39,38 @@ class ManageableHost(Host):
         self.ssh_pid_file = None
         self.mounted_dirs = []
 
-        super(Host, self).__init__(name, ip=None, inNamespace=True)
+        Host.__init__( self, name, inNamespace, **kwargs )
 
     def list_processes(self):
-        pass
+        process_list = []
+        my_ns_symlink = '/proc/%s/ns/net' % self.pid
+        for symlink in glob.glob('/proc/[1-9]*/ns/net'):
+            pid = None
+            try:
+                if os.path.samefile(my_ns_symlink, symlink):
+                    pid = symlink.split('/')[2]
+            except:
+                pass
+            else:
+                if pid and int(pid) != self.pid:
+                    process_list.append(pid)
+
+        return process_list
+
+    def stop_all_processes(self):
+        info('*** Stopping all remaining procresses on %s\n' % self.name)
+        running_processes = self.list_processes()
+
+        for process in running_processes:
+            cmd = "kill -9 %s" % process
+            info('** killing process id %s\n' % process)
+            subprocess.call(shlex.split(cmd))
+            time.sleep(1)
 
     def stop_processes(self):
         self.stop_ssh_server()
+        time.sleep(1)
+        self.stop_all_processes()
 
     def mount_root_fs(self):
         if not os.path.exists(self.lab_dir):
@@ -119,6 +145,7 @@ class ManageableHost(Host):
         self.cmd(shlex.split(start_ssh))
 
     def stop_ssh_server(self):
+        info('*** Stopping ssh server on %s\n' % self.name)
         kill_ssh = "/bin/kill $(cat %s)" % self.ssh_pid_file
         self.cmd(shlex.split(kill_ssh))
 
