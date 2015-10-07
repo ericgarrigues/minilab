@@ -58,7 +58,7 @@ class ManageableHost(Host):
         return process_list
 
     def stop_all_processes(self):
-        info('*** Stopping all remaining procresses on %s\n' % self.name)
+        info('*** Stopping all remaining processes on %s\n' % self.name)
         running_processes = self.list_processes()
 
         for process in running_processes:
