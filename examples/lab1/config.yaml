@@ -4,7 +4,7 @@ general:
     ssh:
         template: "sshd_config.j2"
         tmpl_dir: "templates"
-        authorized_keys: "examples/authorized_keys"
+        authorized_keys: "examples/lab1/files/authorized_keys"
     rootfs: "/var/lib/lxc/baseroot/rootfs"
     nat:
         node:

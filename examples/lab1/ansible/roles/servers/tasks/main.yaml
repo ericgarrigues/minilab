@@ -1,0 +1,20 @@
+---
+# Update all packages to the latest version
+- apt: update_cache=yes
+
+# Example using key data from a local file on the management machine
+#- authorized_key: user=charlie key="{{ lookup('file', '/home/charlie/.ssh/id_rsa.pub') }}"
+
+- name: install packages
+  apt: name={{ item }} state=present
+  with_items:
+      - lldpd
+      - wget
+      - curl
+      - iptraf
+      - tcpdump
+
+# start lldpd daemon
+- command: /etc/init.d/lldpd start
+  
+
