@@ -59,6 +59,7 @@ It is today required to have a remote (can be on same host) openflow controller 
 I recommand ryu or opendaylight controllers as they are both well supported.
 
 For ryu installation : http://osrg.github.io/ryu/
+
 For opendaylight installation : https://www.opendaylight.org/
 
 Minilab configuration
@@ -81,7 +82,10 @@ root_fs: "/var/minilab/rootfs"
 ssh:
     template: "sshd_config.j2"
     tmpl_dir: "templates"
+    authorized_keys: "~/.ssh/id_rsa_lab.pub"
 ``` 
+
+
 
 ### Topology configuration
 
@@ -170,13 +174,13 @@ Host 192.168.100.*
 
 Your public ssh key must be present in your /root/.ssh/authorized_keys of the minilab host.
 
-Managing ManageableHosts with ansible:
---------------------------------------
+Managing ManageableHosts with ansible
+-------------------------------------
 
 TO WRITE
 
-Hosting minilab in Gandi (service provider i work for):
--------------------------------------------------------
+Hosting minilab in Gandi (service provider i work for)
+------------------------------------------------------
 
 TO WRITE
 
