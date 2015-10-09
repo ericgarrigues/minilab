@@ -1,16 +1,11 @@
-# example lab configuration file
-general:
-    hosts_dir: "/var/minilab"
-    ssh:
-        template: "sshd_config.j2"
-        tmpl_dir: "templates"
-        authorized_keys: "examples/lab1/files/authorized_keys"
-    rootfs: "/var/minilab/rootfs"
-    nat:
-        node:
-            name: opg1
-            ip: "192.168.100.254/24"
-        ext_iface: eth0
+# example topology
+nat:
+    node:
+        name: ogw
+        ip: "192.168.100.254/24"
+    switch:
+        name: o1
+    ext_iface: eth0
 controllers:
     - name: ryu
       ip: 127.0.0.1 
@@ -21,12 +16,12 @@ switches:
     - name: v1
       dpid: "0000000000000002"
     - name: d1
-      dpid: "0000000000000007"
+      dpid: "0000000000000003"
       links:
           - f1
           - v1
     - name: d2
-      dpid: "0000000000000008"
+      dpid: "0000000000000004"
       links:
           - f1
           - v1

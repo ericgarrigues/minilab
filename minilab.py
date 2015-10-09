@@ -73,6 +73,7 @@ class ManageableHost(Host):
         self.stop_all_processes()
 
     def mount_root_fs(self):
+        info('*** Mounting filesystem for %s\n' % self.name)
         if not os.path.exists(self.lab_dir):
             os.mkdir(self.lab_dir)
 
@@ -109,6 +110,7 @@ class ManageableHost(Host):
         self.mounted_dirs.append(merged_dir)
 
     def umount_root_fs(self):
+        info('*** Unmounting filesystem for %s\n' % self.name)
         for mount_point in self.mounted_dirs:
             subprocess.call(shlex.split("umount %s" % mount_point))
 
@@ -133,7 +135,9 @@ class ManageableHost(Host):
         key_file.close()
 
     def start_ssh_server(self):
-        self.copy_auth_keys()
+        if self.auth_keys:
+            self.copy_auth_keys()
+
         ssh_config = self.create_ssh_config()
         host_config_path = os.path.join(self.root_dir, 'etc/ssh/sshd_config')
 
@@ -141,6 +145,7 @@ class ManageableHost(Host):
         sshf.write(ssh_config)
         sshf.close()
 
+        info('*** Starting ssh server on %s\n' % self.name)
         start_ssh = '/usr/sbin/sshd -f %s' % host_config_path
         self.cmd(shlex.split(start_ssh))
 
@@ -161,8 +166,8 @@ def load_config(config_file):
     return config
 
 
-def setup_controllers(net, config):
-    for controller in config['controllers']:
+def setup_controllers(net, topology):
+    for controller in topology['controllers']:
         ctrl = RemoteController(controller['name'],
                                 ip=controller['ip'],
                                 port=controller['port'])
@@ -170,26 +175,27 @@ def setup_controllers(net, config):
         net.addController( ctrl )
 
 
-def setup_hosts(net, switches, config):
+def setup_hosts(net, switches, config, topology):
     info('*** Adding hosts\n')
     hosts = {}
 
     ssh_template = None
     auth_keys = None
 
-    if 'ssh' in config['general']:
-        template = config['general']['ssh']['template']
-        tmpl_dir = config['general']['ssh']['tmpl_dir']
+    if 'ssh' in config:
+        template = config['ssh']['template']
+        tmpl_dir = config['ssh']['tmpl_dir']
 
         env = Environment(loader=FileSystemLoader(tmpl_dir))
         ssh_template = env.get_template(template)
-        auth_keys = config['general']['ssh']['authorized_keys']
+        if config['ssh'].has_key('authorized_keys'):
+            auth_keys = config['ssh']['authorized_keys']
 
-    for host in config['hosts']:
+    for host in topology['hosts']:
         if host['is_manageable']:
             new_host = net.addHost(host['name'], ip=None,
                                    cls=ManageableHost,
-                                   root_fs=config['general']['rootfs'],
+                                   root_fs=config['rootfs'],
                                    ssh_template=ssh_template,
                                    auth_keys=auth_keys)
             new_host.mount_root_fs()
@@ -216,15 +222,15 @@ def setup_hosts(net, switches, config):
     return hosts
 
 
-def setup_switches(net, config):
+def setup_switches(net, topology):
     switches = {}
     info( '*** Adding switches\n' )
     # first loop : create switches
-    for switch in config['switches']:
+    for switch in topology['switches']:
         switches[switch['name']] = net.addSwitch( switch['name'],
                                                   dpid=switch['dpid'] )
     # second loop: add links between switches
-    for switch in config['switches']:
+    for switch in topology['switches']:
         if switch.has_key('links'):
             for peer in switch['links']:
                 net.addLink(switches[switch['name']],
@@ -233,20 +239,19 @@ def setup_switches(net, config):
     return switches
 
 
-def setup_nat(net, config):
+def setup_nat(net, topology):
     node = None
-    if 'general' in config:
-        if 'nat' in config['general']:
-            info('*** Setup nat gateway node\n')
-            node = connectToInternet(net,
-                                     switch='o1',
-                                     node_name=config['general']['nat']['node']['name'],
-                                     ip_address=config['general']['nat']['node']['ip'])
+    if 'nat' in topology:
+        info('*** Setup nat gateway node\n')
+        node = connectToInternet(net,
+                                 switch=topology['nat']['switch']['name'],
+                                 node_name=topology['nat']['node']['name'],
+                                 ip_address=topology['nat']['node']['ip'])
 
-            info('*** Starting nat\n')
-            startNAT(node,
-                     inetIntf=config['general']['nat']['ext_iface'],
-                     intIP=config['general']['nat']['node']['ip'])
+        info('*** Starting nat\n')
+        startNAT(node,
+                 inetIntf=topology['nat']['ext_iface'],
+                 intIP=topology['nat']['node']['ip'])
 
     return node
 
@@ -259,7 +264,6 @@ def tear_down_nat(node):
 def start(net):
     for name, node in net.items():
         if isinstance(node, ManageableHost):
-            #node.mount_root_fs()
             node.start_ssh_server()
 
     info('*** Starting network\n')
@@ -279,15 +283,15 @@ def stop(net):
     net.stop()
 
 
-def setup_topo(config):
+def setup_topo(config, topology):
 
     net = Mininet(controller=RemoteController)
 
-    setup_controllers(net, config)
-    switches = setup_switches(net, config)
-    hosts = setup_hosts(net, switches, config)
+    setup_controllers(net, topology)
+    switches = setup_switches(net, topology)
+    hosts = setup_hosts(net, switches, config, topology)
 
-    nat_node = setup_nat(net, config)
+    nat_node = setup_nat(net, topology)
 
     start(net)
 
@@ -301,10 +305,13 @@ if __name__ == '__main__':
     setLogLevel( 'info')
 
     parser = argparse.ArgumentParser(description='Minilab arguments.')
-    parser.add_argument('config', metavar='config', type=str,
-                        help='lab configuration file')
+    parser.add_argument('--config', dest='config', type=str, default='config.yaml',
+                        help='minilab configuration file (default: config.yaml)')
+    parser.add_argument('topology', metavar='topology', type=str,
+                        help='topology configuration file')
 
     args = parser.parse_args()
 
-    topo_config = load_config(args.config)
-    setup_topo(topo_config)
+    minilab_config = load_config(args.config)
+    topo_config = load_config(args.topology)
+    setup_topo(minilab_config, topo_config)

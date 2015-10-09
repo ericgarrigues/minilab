@@ -1,0 +1,79 @@
+# example topology with a loop
+# between 3 switches and 2 hosts
+# connected on each switch.
+# Every host is also connected to
+# an out-of-band switch
+nat:
+    node:
+        name: oobgw
+        ip: "192.168.100.254/24"
+    switch:
+        name: oobs1
+    ext_iface: eth0
+controllers:
+    - name: ryu
+      ip: 127.0.0.1 
+      port: 6653
+switches:
+    - name: s1
+      dpid: "0000000000000001"
+    - name: s2
+      dpid: "0000000000000002"
+      links:
+          - s1
+    - name: s3
+      dpid: "0000000000000003"
+      links:
+          - s1
+          - s2
+    - name: oobs1
+      dpid: "0000000000000004"
+hosts:
+    - name: h1
+      is_manageable: True
+      gw: 192.168.100.254
+      links:
+          - sw: s1
+            ip: "172.16.0.1/16"
+          - sw: oobs1
+            ip: "192.168.100.1/24"
+    - name: h2
+      is_manageable: True
+      gw: 192.168.100.254
+      links:
+          - sw: s1
+            ip: "172.16.0.2/16"
+          - sw: oobs1
+            ip: "192.168.100.2/24"
+    - name: h3
+      is_manageable: True
+      gw: 192.168.100.254
+      links:
+          - sw: s2
+            ip: "172.16.0.3/16"
+          - sw: oobs1
+            ip: "192.168.100.3/24"
+    - name: h4
+      is_manageable: True
+      gw: 192.168.100.254
+      links:
+          - sw: s2
+            ip: "172.16.0.4/16"
+          - sw: oobs1
+            ip: "192.168.100.4/24"
+    - name: h5
+      is_manageable: True
+      gw: 192.168.100.254
+      links:
+          - sw: s3
+            ip: "172.16.0.5/16"
+          - sw: oobs1
+            ip: "192.168.100.5/24"
+    - name: h6
+      is_manageable: True
+      gw: 192.168.100.254
+      links:
+          - sw: s3
+            ip: "172.16.0.6/16"
+          - sw: oobs1
+            ip: "192.168.100.6/24"
