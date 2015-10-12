@@ -1,0 +1,2 @@
+# Uncomment to start SNMP subagent and enable CDP, SONMP and EDP protocol
+DAEMON_ARGS="-S minilab_{{ lab_hostname }} -I {{ ifaces|join(',') }} -C {{ ifaces|join(',') }} -M 1"

@@ -11,6 +11,11 @@
       - iptraf
       - tcpdump
 
+# install lldp daemon start option file
+- name: install lldpd config
+  template: src=lldpd.j2 dest=/etc/default/lldpd
+
+
 # start lldpd daemon
 - command: /etc/init.d/lldpd start
   
