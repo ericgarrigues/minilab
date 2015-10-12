@@ -23,14 +23,24 @@ def load_config(config_file):
 
 def get_inventory(topo):
 
-    host_list = []
+    dafault_host_list = []
+
+    inventory = {'manageables' : { 'hosts' : [] } }
 
     for host in topo['hosts']:
         if 'is_manageable' in host:
             if host['is_manageable']:
-                host_list.append(host['name'])
+                if 'ansible_group' in host:
+                    group = host['ansible_group']
+                    if group not in inventory:
+                        inventory[group] = {'hosts' : []}
+                else:
+                    group = 'manageables'
 
-    inventory = {'manageables': {'hosts': host_list}}
+                inventory[group]['hosts'].append(host['name'])
+
+
+    #inventory['manageables'] = {'hosts': default_host_list}
 
     print json.dumps(inventory)
 
@@ -44,6 +54,9 @@ def get_host(hostname, topo):
         host_iface_num = 0
         host_ifaces = []
         if host['name'] == hostname:
+            if 'ansible_vars' in host:
+                ansible_dict = host['ansible_vars']
+
             ansible_dict['lab_hostname'] = hostname
             for link in host['links']:
                 iface_name = "%s-eth%s" % (hostname, host_iface_num)
@@ -57,6 +70,8 @@ def get_host(hostname, topo):
                 host_iface_num += 1
 
             ansible_dict['ifaces'] = host_ifaces
+
+
 
             break
 
