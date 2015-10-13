@@ -32,6 +32,19 @@ If you want to be able to NAT your network:
 - kernel with iptables support
 
 
+#### Openflow controller
+
+It is today required to have a remote (can be on same host) openflow controller
+for spawned switches which, in my opinion, is the most frequent use of
+minilab/mininet.
+
+I recommand ryu or opendaylight controllers as they are both well supported.
+
+For ryu installation : http://osrg.github.io/ryu/
+
+For opendaylight installation : https://www.opendaylight.org/
+
+
 Installation
 ------------
 
@@ -53,18 +66,6 @@ The simple/auto way with ubuntu 14.04 as distribution for manageable hosts:
 
     cd minilab
     sudo ./setup_mlenv.sh
-
-
-Test minilab
-------------
-
-It is today required to have a remote (can be on same host) openflow controller for spawned switches which, in my opinion, is the most frequent use of minilab/mininet.
-
-I recommand ryu or opendaylight controllers as they are both well supported.
-
-For ryu installation : http://osrg.github.io/ryu/
-
-For opendaylight installation : https://www.opendaylight.org/
 
 
 Minilab configuration
@@ -251,34 +252,8 @@ s1 s2 s3 oobs1
 mininet>
 ```
 
-Connect remotely into the manageable hosts
-------------------------------------------
-
-You can easily access your hosts with a simple ssh configuration (~/.ssh/config)
- like this:
-
-```
-Host minilab
-    user root
-    Hostname my.minilab.host
-    IdentityFile ~/.ssh/my_ssh_key
-
-Host 192.168.100.*
-    user root
-    ServerAliveInterval    60
-    TCPKeepAlive           yes
-    ProxyCommand           ssh -q -A root@minilab nc %h %p
-    ControlMaster          auto
-    ControlPath            ~/.ssh/mux-%r@%h:%p
-    ControlPersist         8h
-    User                   root
-```
-
-Your public ssh key must be present in your /root/.ssh/authorized_keys of the
-minilab host.
-
-Managing ManageableHosts with ansible
--------------------------------------
+Deploying code to ManageableHosts with ansible
+----------------------------------------------
 
 The main purpose of the ManageableHost node class is to provide a pseudo
 container with its own files that is accessible via ssh, which make it a good
@@ -347,8 +322,34 @@ Example : play the sample playbook deploying lldpd
 export TOPOLOGY=/root/minilab/examples/loop/topo.yaml
 cd minilab
 ansible-playbook -i extras/ansible/lab_inventory.py example/loop/ansible/playbook.yaml
+
 ```
 
+SSH configuration for remote access
+-----------------------------------
+
+You can easily access your hosts with a simple ssh configuration (~/.ssh/config)
+ like this:
+
+```
+Host minilab
+    user root
+    Hostname my.minilab.host
+    IdentityFile ~/.ssh/my_ssh_key
+
+Host 192.168.100.*
+    user root
+    ServerAliveInterval    60
+    TCPKeepAlive           yes
+    ProxyCommand           ssh -q -A root@minilab nc %h %p
+    ControlMaster          auto
+    ControlPath            ~/.ssh/mux-%r@%h:%p
+    ControlPersist         8h
+    User                   root
+```
+
+Your public ssh key must be present in your /root/.ssh/authorized_keys of the
+minilab host.
 
 Hosting minilab in Gandi (service provider i work for)
 ------------------------------------------------------
