@@ -10,7 +10,7 @@ A new node class ManageableHost provides a basic pseudo container (network
 namespace + chrooted ssh) node type that can be manageable directly or with
 ansible.
 
-Topologies are defined in yaml files (see examples/lab1/topo.yaml).
+Topologies are defined in yaml files (see examples/loop/topo.yaml).
 
 
 Requirements
