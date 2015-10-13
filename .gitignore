@@ -1,6 +1,4 @@
 build/
-debian/python-zonenotify
-debian/python-zonenotify.*
 debian/files
 *.egg-info
 .idea
