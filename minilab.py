@@ -58,12 +58,12 @@ class ManageableHost(Host):
         return process_list
 
     def stop_all_processes(self):
-        info('*** Stopping all remaining processes on %s\n' % self.name)
+        info('**** Stopping all remaining processes on %s\n' % self.name)
         running_processes = self.list_processes()
 
         for process in running_processes:
             cmd = "kill -9 %s" % process
-            info('** killing process id %s\n' % process)
+            info('**** killing process id %s\n' % process)
             subprocess.call(shlex.split(cmd))
             time.sleep(1)
 
@@ -73,7 +73,7 @@ class ManageableHost(Host):
         self.stop_all_processes()
 
     def mount_root_fs(self):
-        info('*** Mounting filesystem for %s\n' % self.name)
+        info('**** Mounting filesystem for %s\n' % self.name)
         if not os.path.exists(self.lab_dir):
             os.mkdir(self.lab_dir)
 
@@ -110,7 +110,7 @@ class ManageableHost(Host):
         self.mounted_dirs.append(merged_dir)
 
     def umount_root_fs(self):
-        info('*** Unmounting filesystem for %s\n' % self.name)
+        info('**** Unmounting filesystem for %s\n' % self.name)
         for mount_point in self.mounted_dirs:
             subprocess.call(shlex.split("umount %s" % mount_point))
 
@@ -145,12 +145,12 @@ class ManageableHost(Host):
         sshf.write(ssh_config)
         sshf.close()
 
-        info('*** Starting ssh server on %s\n' % self.name)
+        info('**** Starting ssh server on %s\n' % self.name)
         start_ssh = '/usr/sbin/sshd -f %s' % host_config_path
         self.cmd(shlex.split(start_ssh))
 
     def stop_ssh_server(self):
-        info('*** Stopping ssh server on %s\n' % self.name)
+        info('**** Stopping ssh server on %s\n' % self.name)
         kill_ssh = "/bin/kill $(cat %s)" % self.ssh_pid_file
         self.cmd(shlex.split(kill_ssh))
 
@@ -248,7 +248,7 @@ def setup_nat(net, topology):
                                  node_name=topology['nat']['node']['name'],
                                  ip_address=topology['nat']['node']['ip'])
 
-        info('*** Starting nat\n')
+        info('** Starting nat\n')
         startNAT(node,
                  inetIntf=topology['nat']['ext_iface'],
                  intIP=topology['nat']['node']['ip'])
@@ -257,7 +257,7 @@ def setup_nat(net, topology):
 
 
 def tear_down_nat(node):
-    info('*** Stopping nat\n')
+    info('** Stopping nat\n')
     stopNAT(node)
 
 
@@ -266,10 +266,9 @@ def start(net):
         if isinstance(node, ManageableHost):
             node.start_ssh_server()
 
-    info('*** Starting network\n')
+    info('** Starting network\n')
     net.start()
 
-    info('*** Starting CLI\n')
     CLI(net)
 
 
@@ -279,7 +278,7 @@ def stop(net):
             node.stop_processes()
             node.umount_root_fs()
 
-    info('*** Stopping network\n')
+    info('** Stopping network\n')
     net.stop()
 
 

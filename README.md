@@ -25,11 +25,11 @@ Requirements
 
 If you want to use ManageableHost class:
 
-- linux kernel with overlaysfs support (>= 3.18)
+- linux kernel with **overlaysfs** support (>= 3.18)
 
 If you want to be able to NAT your network:
 
-- kernel with iptables support
+- kernel with **iptables** support
 
 
 #### Openflow controller
@@ -76,7 +76,7 @@ Minilab configuration files are written in yaml.
 ### General configuration
 
 By default the configuration is in the minilab directory and is named
-config.yaml.
+**config.yaml**.
 
 You can specify another configuration file with the **--config** minilab runtime
  argument.
@@ -145,7 +145,7 @@ hosts:
       is_manageable: True
       gw: 192.168.100.254
       links:
-          - sw: v1
+          - sw: s3
             ip: "172.16.0.3/16"
           - sw: o1
             ip: "192.168.100.3/24"
@@ -167,7 +167,7 @@ git clone https://github.com/osrg/ryu.git
 ```
 
 I strongly suggest that you create a virtualenv to run ryu and install all its
-dependancies.
+dependencies.
 ```
 apt-get install python-virtualenv
 ```
@@ -178,7 +178,7 @@ virtualenv ryuvenv
 source ryuvenv/bin/activate
 ```
 
-Install ryu and its dependancies
+Install ryu and its dependencies
 
 ```
 cd ryu
@@ -359,5 +359,5 @@ TO WRITE
 TODO
 ----
 
-- remove dependancy on py-ipaddress
+- remove dependency on py-ipaddress
 - refactor host groups and ansible vars
