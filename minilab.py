@@ -7,7 +7,6 @@ to setup and test any kind of complex network.
 
 """
 
-import sys
 import subprocess
 import shlex
 import argparse
@@ -25,6 +24,7 @@ from jinja2 import FileSystemLoader, Environment
 
 from nat import *
 
+
 class ManageableHost(Host):
     def __init__(self, name, ip=None, inNamespace=True,
                  labdir='/var/minilab', root_fs=None,
@@ -39,7 +39,7 @@ class ManageableHost(Host):
         self.ssh_pid_file = None
         self.mounted_dirs = []
 
-        Host.__init__( self, name, inNamespace, **kwargs )
+        Host.__init__(self, name, inNamespace, **kwargs)
 
     def list_processes(self):
         process_list = []
@@ -115,7 +115,7 @@ class ManageableHost(Host):
             subprocess.call(shlex.split("umount %s" % mount_point))
 
         # fixme: currently need to umount /sys
-        #subprocess.call(shlex.split("umount %s" % '/sys'))
+        # subprocess.call(shlex.split("umount %s" % '/sys'))
 
     def create_ssh_config(self):
         self.ssh_pid_file = os.path.join(self.lab_dir, self.name, "sshd.pid")
@@ -171,8 +171,8 @@ def setup_controllers(net, topology):
         ctrl = RemoteController(controller['name'],
                                 ip=controller['ip'],
                                 port=controller['port'])
-        info( '*** Adding controller\n' )
-        net.addController( ctrl )
+        info('*** Adding controller\n')
+        net.addController(ctrl)
 
 
 def setup_hosts(net, switches, config, topology):
@@ -188,7 +188,7 @@ def setup_hosts(net, switches, config, topology):
 
         env = Environment(loader=FileSystemLoader(tmpl_dir))
         ssh_template = env.get_template(template)
-        if config['ssh'].has_key('authorized_keys'):
+        if 'authorized_keys' in config['ssh']:
             auth_keys = config['ssh']['authorized_keys']
 
     for host in topology['hosts']:
@@ -202,21 +202,19 @@ def setup_hosts(net, switches, config, topology):
         else:
             new_host = net.addHost(host['name'])
 
-        host_switches = []
-
         for link in host['links']:
             switch = switches[link['sw']]
             lnk = net.addLink(new_host, switch)
 
-            if link.has_key('ip'):
-               ip, netmask = link['ip'].split('/')
-               new_host.setIP(ip, prefixLen=netmask, intf=lnk.intf1)
+            if 'ip' in link:
+                ip, netmask = link['ip'].split('/')
+                new_host.setIP(ip, prefixLen=netmask, intf=lnk.intf1)
 
-        if host.has_key('gw'):
+        if 'gw' in host:
             new_host.sendCmd('ip route add default via %s' % host['gw'])
             new_host.waiting = False
 
-        if not hosts.has_key(host['name']):
+        if not host['name'] in hosts:
             hosts[host['name']] = {'node': new_host, 'rootfs': new_host.name}
 
     return hosts
@@ -224,16 +222,16 @@ def setup_hosts(net, switches, config, topology):
 
 def setup_switches(net, topology):
     switches = {}
-    info( '*** Adding switches\n' )
+    info('*** Adding switches\n')
     # first loop : create switches
     for switch in topology['switches']:
-        switches[switch['name']] = net.addSwitch( switch['name'],
-                                                  dpid=switch['dpid'],
-                                                  cls=OVSSwitch,
-                                                  protocols='OpenFlow13')
+        switches[switch['name']] = net.addSwitch(switch['name'],
+                                                 dpid=switch['dpid'],
+                                                 cls=OVSSwitch,
+                                                 protocols='OpenFlow13')
     # second loop: add links between switches
     for switch in topology['switches']:
-        if switch.has_key('links'):
+        if 'links' in switch:
             for peer in switch['links']:
                 net.addLink(switches[switch['name']],
                             switches[peer])
@@ -304,11 +302,12 @@ def setup_topo(config, topology):
 
 
 if __name__ == '__main__':
-    setLogLevel( 'info')
+    setLogLevel('info')
 
     parser = argparse.ArgumentParser(description='Minilab arguments.')
-    parser.add_argument('--config', dest='config', type=str, default='config.yaml',
-                        help='minilab configuration file (default: config.yaml)')
+    parser.add_argument('--config', dest='config', type=str,
+                        default='config.yaml',
+                        help='minilab config file (default: config.yaml)')
     parser.add_argument('topology', metavar='topology', type=str,
                         help='topology configuration file')
 
