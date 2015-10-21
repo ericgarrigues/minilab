@@ -228,7 +228,7 @@ def setup_switches(net, topology):
         if 'protocols' in switch:
             protocols = ','.join(switch['protocols'])
         else:
-            protocols = 'OpenFlow13'
+            protocols = 'OpenFlow10'
 
         switches[switch['name']] = net.addSwitch(switch['name'],
                                                  dpid=switch['dpid'],
@@ -268,7 +268,7 @@ def fix_switch_protocols(topology):
         if 'protocols' in switch:
             protocols = ','.join(switch['protocols'])
         else:
-            protocols = 'OpenFlow13'
+            protocols = 'OpenFlow10'
 
         cmd = "ovs-vsctl set Bridge %s protocols=%s" % (switch['name'],
                                                         protocols)
