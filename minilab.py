@@ -288,6 +288,8 @@ def start(net):
     info('** Starting network\n')
     net.start()
 
+    fix_switch_protocols(topology)
+
     CLI(net)
 
 
@@ -312,8 +314,6 @@ def setup_topo(config, topology):
     nat_node = setup_nat(net, topology)
 
     start(net)
-
-    fix_switch_protocols(topology)
 
     if nat_node:
         tear_down_nat(nat_node)
