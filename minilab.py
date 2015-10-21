@@ -115,7 +115,7 @@ class ManageableHost(Host):
             subprocess.call(shlex.split("umount %s" % mount_point))
 
         # fixme: currently need to umount /sys
-        subprocess.call(shlex.split("umount %s" % '/sys'))
+        # subprocess.call(shlex.split("umount %s" % '/sys'))
 
     def create_ssh_config(self):
         self.ssh_pid_file = os.path.join(self.lab_dir, self.name, "sshd.pid")
