@@ -349,7 +349,11 @@ Host 192.168.100.*
 ```
 
 Your public ssh key must be present in your /root/.ssh/authorized_keys of the
-minilab host.
+minilab host and the netcat software must be installed.
+
+```
+apt-get install netcat
+```
 
 Hosting minilab in Gandi (service provider i work for)
 ------------------------------------------------------

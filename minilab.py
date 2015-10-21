@@ -225,10 +225,15 @@ def setup_switches(net, topology):
     info('*** Adding switches\n')
     # first loop : create switches
     for switch in topology['switches']:
+        if 'protocols' in switch:
+            protocols = ','.join(switch['protocols'])
+        else:
+            protocols = 'OpenFlow13'
+
         switches[switch['name']] = net.addSwitch(switch['name'],
                                                  dpid=switch['dpid'],
                                                  cls=OVSSwitch,
-                                                 protocols='OpenFlow13')
+                                                 protocols=protocols)
     # second loop: add links between switches
     for switch in topology['switches']:
         if 'links' in switch:
