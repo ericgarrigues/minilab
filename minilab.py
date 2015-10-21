@@ -261,6 +261,20 @@ def setup_nat(net, topology):
     return node
 
 
+def fix_switch_protocols(topology):
+    """ force protocols versions as mininet < 2.2.0 is not doing its job"""
+
+    for switch in topology['switches']:
+        if 'protocols' in switch:
+            protocols = ','.join(switch['protocols'])
+        else:
+            protocols = 'OpenFlow13'
+
+        cmd = "ovs-vsctl set Bridge %s protocols=%s" % (switch['name'],
+                                                        protocols)
+        subprocess.call(shlex.split(cmd))
+
+
 def tear_down_nat(node):
     info('** Stopping nat\n')
     stopNAT(node)
@@ -298,6 +312,8 @@ def setup_topo(config, topology):
     nat_node = setup_nat(net, topology)
 
     start(net)
+
+    fix_switch_protocols()
 
     if nat_node:
         tear_down_nat(nat_node)
