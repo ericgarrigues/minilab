@@ -280,7 +280,7 @@ def tear_down_nat(node):
     stopNAT(node)
 
 
-def start(net):
+def start(net, topology):
     for name, node in net.items():
         if isinstance(node, ManageableHost):
             node.start_ssh_server()
@@ -313,7 +313,7 @@ def setup_topo(config, topology):
 
     nat_node = setup_nat(net, topology)
 
-    start(net)
+    start(net, topology)
 
     if nat_node:
         tear_down_nat(nat_node)
