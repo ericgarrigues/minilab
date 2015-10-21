@@ -169,7 +169,7 @@ git clone https://github.com/osrg/ryu.git
 I strongly suggest that you create a virtualenv to run ryu and install all its
 dependencies.
 ```
-apt-get install python-virtualenv
+apt-get install python-virtualenv python-dev
 ```
 
 Then create and enter the virtualenv
@@ -199,7 +199,7 @@ pip install six --upgrade
 #### Start ryu with the minilab configuration
 
 ```
-ryu-manager --config-file ~/minilab/extras/ryu.conf
+ryu-manager --config-file ~/minilab/extras/ryu/ryu.conf
 ```
 
 Testing the example loop topology
