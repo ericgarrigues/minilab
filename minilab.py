@@ -313,7 +313,7 @@ def setup_topo(config, topology):
 
     start(net)
 
-    fix_switch_protocols()
+    fix_switch_protocols(topology)
 
     if nat_node:
         tear_down_nat(nat_node)
