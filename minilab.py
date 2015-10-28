@@ -276,6 +276,16 @@ def fix_switch_protocols(topology):
         subprocess.call(shlex.split(cmd))
 
 
+def set_oob_switch_standalone(topology):
+    if 'nat' in topology:
+        switch = topology['nat']['switch']['name']
+        cmd = shlex.split("ovs-vsctl set-fail-mode %s standalone " % switch)
+        subprocess.call(cmd)
+
+        cmd2 = shlex.split("ovs-vsctl del-controller %s" % switch)
+        subprocess.call(cmd2)
+
+
 def tear_down_nat(node):
     info('** Stopping nat\n')
     stopNAT(node)
@@ -290,6 +300,7 @@ def start(net, topology):
     net.start()
 
     fix_switch_protocols(topology)
+    set_oob_switch_standalone(topology)
 
     CLI(net)
 
@@ -306,7 +317,7 @@ def stop(net):
 
 def setup_topo(config, topology):
     nat_node = None
-    
+
     try:
         net = Mininet(controller=RemoteController)
 
