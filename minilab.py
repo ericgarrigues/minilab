@@ -12,6 +12,7 @@ import shlex
 import argparse
 import yaml
 import os
+import sys
 import time
 import glob
 
@@ -304,21 +305,47 @@ def stop(net):
 
 
 def setup_topo(config, topology):
+    nat_node = None
+    
+    try:
+        net = Mininet(controller=RemoteController)
 
-    net = Mininet(controller=RemoteController)
+        setup_controllers(net, topology)
+        switches = setup_switches(net, topology)
+        hosts = setup_hosts(net, switches, config, topology)
 
-    setup_controllers(net, topology)
-    switches = setup_switches(net, topology)
-    hosts = setup_hosts(net, switches, config, topology)
+        nat_node = setup_nat(net, topology)
 
-    nat_node = setup_nat(net, topology)
+        start(net, topology)
 
-    start(net, topology)
+    except Exception, e:
+        info('** Error spawning topology\n')
+        print e
+        cleanup_all(config, topology)
+        sys.exit(1)
 
     if nat_node:
         tear_down_nat(nat_node)
 
     stop(net)
+
+
+def cleanup_all(config, topology, hard_cleanup=False):
+    for host in topology['hosts']:
+        if host['is_manageable']:
+            host_dir = os.path.join(config['ml_dir'], host['name'])
+            host_root_dir = os.path.join(host_dir, 'merged')
+            for directory in ['sys', 'proc']:
+                mount_point = os.path.join(host_root_dir, directory)
+                subprocess.call(shlex.split("umount %s" % mount_point))
+
+            subprocess.call(shlex.split("umount %s" % host_root_dir))
+
+            if hard_cleanup:
+                shutil.rmtree(host_dir)
+
+    # clean mininet
+    subprocess.call(shlex.split("mn -c"))
 
 
 if __name__ == '__main__':
@@ -330,9 +357,26 @@ if __name__ == '__main__':
                         help='minilab config file (default: config.yaml)')
     parser.add_argument('topology', metavar='topology', type=str,
                         help='topology configuration file')
+    parser.add_argument('--cleanup', dest='cleanup', action='store_true',
+                        help='cleanup minilab setup')
+    parser.add_argument('--reset', dest='hard_cleanup', action='store_true',
+                        help='cleanup and destroy all hosts directories')
 
     args = parser.parse_args()
 
     minilab_config = load_config(args.config)
     topo_config = load_config(args.topology)
+    cleanup = args.cleanup
+
+    if args.cleanup:
+        if args.hard_cleanup:
+            info('** Cleaning minilab from scratch\n')
+            cleanup_all(minilab_config, topo_config, hard_cleanup=True)
+        else:
+            info('** Cleaning minilab\n')
+            cleanup_all(minilab_config, topo_config)
+
+        info('** Cleaning done\n')
+        sys.exit(0)
+
     setup_topo(minilab_config, topo_config)
