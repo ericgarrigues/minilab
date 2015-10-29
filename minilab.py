@@ -28,15 +28,13 @@ from nat import *
 
 class ManageableHost(Host):
     def __init__(self, name, ip=None, inNamespace=True,
-                 labdir='/var/minilab', root_fs=None,
-                 ssh_template=None, auth_keys=None, **kwargs):
+                 root_dir=None, ssh_template=None,
+                 auth_keys=None, **kwargs):
 
         self.name = name
-        self.root_fs = root_fs
-        self.lab_dir = labdir
         self.ssh_template = ssh_template
         self.auth_keys = auth_keys
-        self.root_dir = None
+        self.root_dir = root_dir
         self.ssh_pid_file = None
         self.mounted_dirs = []
 
@@ -73,53 +71,10 @@ class ManageableHost(Host):
         time.sleep(1)
         self.stop_all_processes()
 
-    def mount_root_fs(self):
-        info('**** Mounting filesystem for %s\n' % self.name)
-        if not os.path.exists(self.lab_dir):
-            os.mkdir(self.lab_dir)
-
-        host_dir = os.path.join(self.lab_dir, self.name)
-        work_dir = os.path.join(host_dir, 'work')
-        upper_dir = os.path.join(host_dir, 'upper')
-        merged_dir = os.path.join(host_dir, 'merged')
-
-        if not os.path.exists(host_dir):
-            os.mkdir(host_dir)
-            os.mkdir(work_dir)
-            os.mkdir(upper_dir)
-            os.mkdir(merged_dir)
-
-        cmd = "mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s" % \
-              (self.root_fs, upper_dir, work_dir, merged_dir)
-
-        mount_root = shlex.split(cmd)
-        subprocess.call(mount_root)
-
-        host_proc = os.path.join(merged_dir, 'proc')
-        cmd_p = "mount -t proc proc %s" % host_proc
-        mount_proc = shlex.split(cmd_p)
-        subprocess.call(mount_proc)
-        self.mounted_dirs.append(host_proc)
-
-        host_sys = os.path.join(merged_dir, 'sys')
-        cmd_s = "mount -t sysfs sysfs %s" % host_sys
-        mount_sys = shlex.split(cmd_s)
-        subprocess.call(mount_sys)
-        self.mounted_dirs.append(host_sys)
-
-        self.root_dir = merged_dir
-        self.mounted_dirs.append(merged_dir)
-
-    def umount_root_fs(self):
-        info('**** Unmounting filesystem for %s\n' % self.name)
-        for mount_point in self.mounted_dirs:
-            subprocess.call(shlex.split("umount %s" % mount_point))
-
-        # fixme: currently need to umount /sys
-        # subprocess.call(shlex.split("umount %s" % '/sys'))
 
     def create_ssh_config(self):
-        self.ssh_pid_file = os.path.join(self.lab_dir, self.name, "sshd.pid")
+        self.ssh_pid_file = os.path.join(self.root_dir, "var", "run",
+                                         "sshd.pid")
 
         return self.ssh_template.render(pid_file=self.ssh_pid_file,
                                         host_dir=self.root_dir)
@@ -140,7 +95,8 @@ class ManageableHost(Host):
             self.copy_auth_keys()
 
         ssh_config = self.create_ssh_config()
-        host_config_path = os.path.join(self.root_dir, 'etc/ssh/sshd_config')
+        host_config_path = os.path.join(self.root_dir,
+                                        'etc/ssh/sshd_config')
 
         sshf = open(host_config_path, 'wb')
         sshf.write(ssh_config)
@@ -157,6 +113,56 @@ class ManageableHost(Host):
 
     def clean_all(self):
         pass
+
+
+def mount_root_fs(hostname, lab_dir, root_fs):
+    info('**** Mounting filesystem for %s\n' % hostname)
+    if not os.path.exists(lab_dir):
+        os.mkdir(lab_dir)
+
+    host_dir = os.path.join(lab_dir, hostname)
+    work_dir = os.path.join(host_dir, 'work')
+    upper_dir = os.path.join(host_dir, 'upper')
+    merged_dir = os.path.join(host_dir, 'merged')
+
+    if not os.path.exists(host_dir):
+        os.mkdir(host_dir)
+        os.mkdir(work_dir)
+        os.mkdir(upper_dir)
+        os.mkdir(merged_dir)
+
+    cmd = "mount -t overlay overlay -o lowerdir=%s,upperdir=%s,workdir=%s %s" % \
+          (root_fs, upper_dir, work_dir, merged_dir)
+
+    mount_root = shlex.split(cmd)
+    subprocess.call(mount_root)
+
+    host_proc = os.path.join(merged_dir, 'proc')
+    cmd_p = "mount -t proc proc %s" % host_proc
+    mount_proc = shlex.split(cmd_p)
+    subprocess.call(mount_proc)
+
+    host_sys = os.path.join(merged_dir, 'sys')
+    cmd_s = "mount -t sysfs sysfs %s" % host_sys
+    mount_sys = shlex.split(cmd_s)
+    subprocess.call(mount_sys)
+
+    return merged_dir
+
+
+def umount_root_fs(hostname, lab_dir):
+    info('**** Unmounting filesystem for %s\n' % hostname)
+
+    host_dir = os.path.join(lab_dir, hostname)
+    merged_dir = os.path.join(host_dir, 'merged')
+    host_proc = os.path.join(merged_dir, 'proc')
+    host_sys = os.path.join(merged_dir, 'sys')
+    
+    for mount_point in [host_sys, host_proc, merged_dir]:
+        subprocess.call(shlex.split("umount %s" % mount_point))
+
+    # fixme: currently need to umount /sys
+    # subprocess.call(shlex.split("umount %s" % '/sys'))
 
 
 def load_config(config_file):
@@ -194,12 +200,13 @@ def setup_hosts(net, switches, config, topology):
 
     for host in topology['hosts']:
         if host['is_manageable']:
+            root_dir = mount_root_fs(host['name'], config['ml_dir'],
+                                     config['rootfs'])
             new_host = net.addHost(host['name'], ip=None,
                                    cls=ManageableHost,
-                                   root_fs=config['rootfs'],
+                                   root_dir=root_dir,
                                    ssh_template=ssh_template,
                                    auth_keys=auth_keys)
-            new_host.mount_root_fs()
         else:
             new_host = net.addHost(host['name'])
 
@@ -305,11 +312,11 @@ def start(net, topology):
     CLI(net)
 
 
-def stop(net):
+def stop(net, config):
     for name, node in net.items():
         if isinstance(node, ManageableHost):
             node.stop_processes()
-            node.umount_root_fs()
+            umount_root_fs(name, config['ml_dir'])
 
     info('** Stopping network\n')
     net.stop()
@@ -323,7 +330,7 @@ def setup_topo(config, topology):
 
         setup_controllers(net, topology)
         switches = setup_switches(net, topology)
-        hosts = setup_hosts(net, switches, config, topology)
+        setup_hosts(net, switches, config, topology)
 
         nat_node = setup_nat(net, topology)
 
@@ -338,7 +345,7 @@ def setup_topo(config, topology):
     if nat_node:
         tear_down_nat(nat_node)
 
-    stop(net)
+    stop(net, config)
 
 
 def cleanup_all(config, topology, hard_cleanup=False):
