@@ -66,6 +66,7 @@ def get_host(hostname, topo):
                     oob_ip = link['ip'].split("/")[0]
                     if 'ansible_host' not in ansible_dict:
                         ansible_dict['ansible_host'] = oob_ip
+                        ansible_dict['ansible_ssh_host'] = oob_ip
 
                 host_iface_num += 1
 
@@ -100,5 +101,3 @@ if __name__ == '__main__':
 
     if ansible_host:
         get_host(ansible_host, topo_config)
-
-

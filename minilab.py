@@ -13,7 +13,6 @@ import argparse
 import yaml
 import os
 import sys
-import time
 import glob
 
 from mininet.net import Mininet
@@ -64,13 +63,10 @@ class ManageableHost(Host):
             cmd = "kill -9 %s" % process
             info('**** killing process id %s\n' % process)
             subprocess.call(shlex.split(cmd))
-            time.sleep(1)
 
     def stop_processes(self):
         self.stop_ssh_server()
-        time.sleep(1)
         self.stop_all_processes()
-
 
     def create_ssh_config(self):
         self.ssh_pid_file = os.path.join(self.root_dir, "var", "run",
@@ -157,7 +153,7 @@ def umount_root_fs(hostname, lab_dir):
     merged_dir = os.path.join(host_dir, 'merged')
     host_proc = os.path.join(merged_dir, 'proc')
     host_sys = os.path.join(merged_dir, 'sys')
-    
+
     for mount_point in [host_sys, host_proc, merged_dir]:
         subprocess.call(shlex.split("umount %s" % mount_point))
 
