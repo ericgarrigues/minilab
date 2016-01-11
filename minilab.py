@@ -8,6 +8,7 @@ to setup and test any kind of complex network.
 """
 
 import subprocess
+import shutil
 import shlex
 import argparse
 import yaml
